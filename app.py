@@ -81,22 +81,29 @@ with st.sidebar:
     if uploaded_file is not None:
         df_raw = load_data(uploaded_file)
     else:
-        df_raw = load_data(r"E:\laliga\LaLiga_Matches.csv")
+        # ✅ STREAMLIT CLOUD COMPATIBLE - Sample data
+        st.info("🧪 Using sample La Liga data (upload real CSV anytime)")
+        np.random.seed(42)
+        data = {
+            'Season': ['2023-24']*50 + ['2024-25']*50,
+            'Date': pd.date_range('2023-08-01', periods=100, freq='3D').strftime('%d/%m/%Y'),
+            'HomeTeam': np.random.choice(['Real Madrid', 'Barcelona', 'Atletico Madrid', 'Sevilla', 'Valencia'], 100),
+            'AwayTeam': np.random.choice(['Villarreal', 'Betis', 'Athletic Club', 'Getafe', 'Osasuna'], 100),
+            'FTHG': np.random.choice([0,1,2,3,4], 100, p=[0.2,0.3,0.3,0.15,0.05]),
+            'FTAG': np.random.choice([0,1,2,3,4], 100, p=[0.25,0.35,0.25,0.1,0.05]),
+            'FTR': np.random.choice(['H', 'D', 'A'], 100, p=[0.45, 0.25, 0.30])
+        }
+        df_raw = pd.DataFrame(data)
     
-    st.success("✅ Dataset loaded!")
+    st.success("✅ Dataset ready!")
     
-    # Model loading with spinner
+    # Model loading...
     @st.cache_data
     def _cached_build(df_raw):
         return build_features_and_model(df_raw)
     
     with st.spinner("🔄 Training AI Model..."):
         df, X, y, model, acc, clf_report, cm = _cached_build(df_raw)
-    
-    st.markdown("---")
-    st.metric("🎯 Model Accuracy", f"{acc:.1%}", delta=None)
-    st.markdown("---")
-    st.markdown("**💾 Powered by Streamlit**")
 
 # -----------------------------
 # Main Tabs with Icons
