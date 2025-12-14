@@ -208,20 +208,15 @@ with st.sidebar:
 
     uploaded_file = st.file_uploader("Upload match CSV", type=["csv"])
 
-    window = st.number_input(
-        "Recent form window (matches)",
-        min_value=3,
-        max_value=10,
-        value=5,
-        step=1,
-    )
+    DEFAULT_CSV_PATH = "data/LaLiga_Matches.csv"
 
-if uploaded_file is None:
-    st.info("Upload a CSV file to begin.")
-    st.stop()
+    if uploaded_file is not None:
+        df_raw = load_data(uploaded_file)
+        st.success("✅ Using uploaded CSV")
+    else:
+        df_raw = load_data(DEFAULT_CSV_PATH)
+        st.info("📂 Using default La Liga dataset")
 
-# Load raw data
-df_raw = load_data(uploaded_file)
 
 # Prepare dropdown options from RAW data (fixes missing teams)
 all_teams = get_all_teams(df_raw)
