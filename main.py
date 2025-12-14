@@ -3,7 +3,6 @@ import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
-import plotly.graph_objects as go
 
 from backend import load_data, compute_recent_stats
 
@@ -24,7 +23,7 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# SAFE CSS (NO SCROLL BREAKING)
+# SAFE CSS (NO SCROLL BREAK)
 # --------------------------------------------------
 st.markdown("""
 <style>
@@ -67,7 +66,6 @@ st.markdown("""
 # Sidebar: Load data
 # --------------------------------------------------
 with st.sidebar:
-    st.markdown("### 📁 Dataset")
     uploaded_file = st.file_uploader("Upload La Liga CSV", type=["csv"])
 
     if uploaded_file:
@@ -90,7 +88,7 @@ with st.sidebar:
             "FTR": np.random.choice(["H", "D", "A"], 120, p=[0.45, 0.25, 0.30])
         })
 
-    st.success("Dataset loaded")
+    st.success("Dataset ready")
 
 # --------------------------------------------------
 # Feature engineering + model
@@ -107,18 +105,18 @@ def build_model(df):
     X = df[["HomeForm", "AwayForm", "HomeGoalsAvg", "AwayGoalsAvg"]].fillna(0)
     y = df["FTR"]
 
-    pipe = Pipeline([
+    model = Pipeline([
         ("scaler", StandardScaler()),
         ("rf", RandomForestClassifier(n_estimators=200, max_depth=6, random_state=42))
     ])
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    pipe.fit(X_train, y_train)
+    model.fit(X_train, y_train)
 
-    acc = pipe.score(X_test, y_test)
-    y_pred = pipe.predict(X_test)
+    acc = model.score(X_test, y_test)
+    y_pred = model.predict(X_test)
 
-    return df, pipe, acc, classification_report(y_test, y_pred, output_dict=True), confusion_matrix(y_test, y_pred)
+    return df, model, acc, classification_report(y_test, y_pred, output_dict=True), confusion_matrix(y_test, y_pred)
 
 df, model, acc, clf_report, cm = build_model(df_raw)
 
@@ -130,18 +128,12 @@ tab_pred, tab_perf, tab_hist, tab_team = st.tabs(
 )
 
 # --------------------------------------------------
-# Predictor tab (SCROLL SAFE)
+# Predictor tab (SCROLL FIXED)
 # --------------------------------------------------
 with tab_pred:
     teams = sorted(set(df["HomeTeam"]) | set(df["AwayTeam"]))
-    seasons = sorted(df["Season"].unique())
 
-    season = st.selectbox("Season", seasons)
-
-    home_team = st.multiselect(
-        "🏠 Home Team", teams, max_selections=1, default=[teams[0]]
-    )[0]
-
+    home_team = st.multiselect("🏠 Home Team", teams, max_selections=1, default=[teams[0]])[0]
     away_team = st.multiselect(
         "✈️ Away Team",
         [t for t in teams if t != home_team],
@@ -163,11 +155,11 @@ with tab_pred:
         }])
 
         pred = model.predict(X_new)[0]
-        proba = model.predict_proba(X_new)[0]
+        probs = model.predict_proba(X_new)[0]
         labels = model.named_steps["rf"].classes_
 
         st.subheader(f"{home_team} vs {away_team}")
-        for l, p in zip(labels, proba):
+        for l, p in zip(labels, probs):
             st.metric(l, f"{p:.1%}")
 
 # --------------------------------------------------
